@@ -1,0 +1,176 @@
+<html>
+<body font="Verdana">
+
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "aclsDataObject"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
+Option Explicit
+
+Private pField1 As String
+Private pField2 As String
+Private pValue1 As Variant
+Private pValue2 As Variant
+Private pDb As String
+Private pDbFile As String
+Private pConn As ADODB.Connection
+Private pRs As ADODB.RecordSet
+Private pArchive As String
+Private pArchiveDbFile As String
+
+
+Public Property Let Db(value As String)
+pDb = value
+End Property
+Public Property Get Db() As String
+Db = pDb
+End Property
+Public Property Let Field1(value As String)
+pField1 = value
+End Property
+Public Property Get Field1() As String
+Field1 = pField1
+End Property
+Public Property Let Field2(value As String)
+pField2 = value
+End Property
+Public Property Get Field2() As String
+Field2 = pField2
+End Property
+Public Property Let Value1(value As Variant)
+pValue1 = value
+End Property
+Public Property Get Value1() As Variant
+Value1 = pValue1
+End Property
+Public Property Let Value2(value As Variant)
+pValue2 = value
+End Property
+Public Property Get Value2() As Variant
+Value2 = pValue2
+End Property
+Public Property Let DbFile(value As String)
+pDbFile = value
+End Property
+Public Property Get DbFile() As String
+DbFile = pDbFile
+End Property
+Public Property Let Conn(value As ADODB.Connection)
+Set pConn = value
+End Property
+Public Property Get Conn() As ADODB.Connection
+Set Conn = pConn
+End Property
+Public Property Let rs(value As ADODB.RecordSet)
+Set pRs = value
+End Property
+Public Property Get rs() As ADODB.RecordSet
+Set rs = pRs
+End Property
+Public Property Let Archive(value As String)
+pArchive = value
+End Property
+Public Property Get Archive() As String
+Archive = pArchive
+End Property
+Public Property Let ArchiveDbFile(value As String)
+pArchiveDbFile = value
+End Property
+Public Property Get ArchiveDbFile() As String
+ArchiveDbFile = pArchiveDbFile
+End Property
+
+Public Function GetNewMatchObj(Optional Where As String = "CheckNumber", Optional Equals As Variant, Optional AndWhere As String = "", Optional Equals2 As Variant) As aclsDataObject
+Dim x As New aclsDataObject
+x.QueryParams Where, Equals, AndWhere, Equals2
+Set GetNewMatchObj = x
+Set x = Nothing
+End Function
+
+Public Function GetNewUpdateObj(Optional Where As String = "CheckNumber", Optional Equals As Variant, Optional UpdateField As String = "", Optional UpdateValue As Variant) As aclsDataObject
+Dim x As New aclsDataObject
+x.QueryParams Where, Equals, UpdateField, UpdateValue
+Set GetNewUpdateObj = x
+Set x = Nothing
+End Function
+
+Public Function GetNewArchiveObj(obj As Variant, DataObj As aclsDataObject) As aclsDataObject
+DataObj.Db = obj.GetArchive
+DataObj.DbFile = obj.GetArchiveDbFile
+Set GetNewArchiveObj = DataObj
+End Function
+
+
+Public Sub QueryParams(Optional a As String = "ItemID", Optional b As Variant, Optional y As String = "", Optional z As Variant)
+Me.Field1 = a
+If IsMissing(b) = True Then b = ""
+Me.Value1 = b
+Me.Field2 = y
+If IsMissing(z) = True Then z = ""
+Me.Value2 = z
+End Sub
+
+Public Sub OpenDbs(DataObject As aclsDataObject)
+'5/18 DataObject As Variant/DataObject As aclsDataObject
+Dim Conn As New ADODB.Connection
+Set Conn = DataObject.Conn
+Dim rs As New ADODB.RecordSet
+Set rs = DataObject.rs
+Conn.ConnectionString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Jared\POS\Access_Int\" & DataObject.DbFile & ".accdb;Persist Security Info=False;"
+Conn.Open
+rs.CursorType = adUseClient
+rs.LockType = adLockOptimistic
+rs.ActiveConnection = Conn
+Set rs = Nothing
+Set Conn = Nothing
+End Sub
+
+
+
+Public Sub CloseDbs(DataObject As aclsDataObject)
+'5/18 DataObject As Variant/DataObject As aclsDataObject
+Dim Conn As New ADODB.Connection
+Set Conn = DataObject.Conn
+Dim rs As New ADODB.RecordSet
+Set rs = DataObject.rs
+rs.Close
+
+Conn.Close
+Set rs = Nothing
+Set Conn = Nothing
+End Sub
+
+Public Function GetMatch(DataObject As aclsDataObject, MatchQuery As String) As ADODB.RecordSet
+OpenDbs DataObject
+Dim rs As New ADODB.RecordSet
+Set rs = DataObject.rs
+rs.Source = MatchQuery
+On Error GoTo EH
+rs.Open
+On Error GoTo 0
+Set GetMatch = rs
+Exit Function
+EH:
+On Error GoTo 0
+rs.Source = "SELECT * FROM " & DataObject.Db & " WHERE False"          '           " & rs.Fields(0).name & " = """""
+rs.Open
+Set GetMatch = rs
+End Function
+
+Public Sub ArchiveData(DataObject As aclsDataObject, ArchiveCmd As String)
+OpenDbs DataObject
+DataObject.Conn.Execute (ArchiveCmd)
+DataObject.Conn.Close
+End Sub
+
+
+
+
+
+</body>
+</html>
